@@ -1,22 +1,32 @@
+import Hash "mo:base/Hash";
+import Int "mo:base/Int";
+
 import Float "mo:base/Float";
 import Text "mo:base/Text";
-import Error "mo:base/Error";
+import Array "mo:base/Array";
+import Nat "mo:base/Nat";
+import HashMap "mo:base/HashMap";
+import Iter "mo:base/Iter";
 
-actor Calculator {
-  public func calculate(operation : Text, num1 : Float, num2 : Float) : async Float {
-    switch (operation) {
-      case ("+") { num1 + num2 };
-      case ("-") { num1 - num2 };
-      case ("*") { num1 * num2 };
-      case ("/") {
-        if (num2 == 0) {
-          throw Error.reject("Division by zero");
-        };
-        num1 / num2
-      };
-      case (_) {
-        throw Error.reject("Invalid operation");
-      };
-    }
+actor WaterTracker {
+  stable var waterIntakeEntries : [(Text, Nat)] = [];
+  var waterIntake = HashMap.HashMap<Text, Nat>(0, Text.equal, Text.hash);
+
+  public func updateWaterIntake(date : Text, amount : Nat) : async [(Text, Nat)] {
+    waterIntake.put(date, amount);
+    waterIntakeEntries := Iter.toArray(waterIntake.entries());
+    waterIntakeEntries
+  };
+
+  public query func getWaterIntake() : async [(Text, Nat)] {
+    waterIntakeEntries
+  };
+
+  system func preupgrade() {
+    waterIntakeEntries := Iter.toArray(waterIntake.entries());
+  };
+
+  system func postupgrade() {
+    waterIntake := HashMap.fromIter<Text, Nat>(waterIntakeEntries.vals(), 0, Text.equal, Text.hash);
   };
 }

@@ -16,6 +16,6 @@ code {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #F5F5F5;
+  min-height: 100vh;
+  background-color: #E3F2FD;
 }

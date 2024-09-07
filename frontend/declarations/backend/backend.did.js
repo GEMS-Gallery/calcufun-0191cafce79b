@@ -1,8 +1,13 @@
 export const idlFactory = ({ IDL }) => {
   return IDL.Service({
-    'calculate' : IDL.Func(
-        [IDL.Text, IDL.Float64, IDL.Float64],
-        [IDL.Float64],
+    'getWaterIntake' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat))],
+        ['query'],
+      ),
+    'updateWaterIntake' : IDL.Func(
+        [IDL.Text, IDL.Nat],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat))],
         [],
       ),
   });

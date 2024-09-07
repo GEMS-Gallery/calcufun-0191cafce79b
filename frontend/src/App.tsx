@@ -1,123 +1,95 @@
-import React, { useState } from 'react';
-import { Button, Grid, Paper, TextField, Typography, CircularProgress } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Button, Grid, Paper, Typography, LinearProgress, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import OpacityIcon from '@mui/icons-material/Opacity';
 import { backend } from 'declarations/backend';
 
-const CalculatorPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  maxWidth: 300,
-}));
+const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const GOAL_OUNCES = 64;
 
-const DisplayTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiInputBase-input': {
-    textAlign: 'right',
-    fontSize: '1.5rem',
-    fontFamily: 'monospace',
-  },
+const TrackerPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  maxWidth: 600,
+  margin: 'auto',
 }));
 
 const App: React.FC = () => {
-  const [display, setDisplay] = useState('0');
-  const [operation, setOperation] = useState('');
-  const [firstNumber, setFirstNumber] = useState<number | null>(null);
-  const [waitingForSecondNumber, setWaitingForSecondNumber] = useState(false);
-  const [calculating, setCalculating] = useState(false);
+  const [waterIntake, setWaterIntake] = useState<number[]>(DAYS_OF_WEEK.map(() => 0));
 
-  const handleNumberClick = (num: string) => {
-    if (waitingForSecondNumber) {
-      setDisplay(num);
-      setWaitingForSecondNumber(false);
-    } else {
-      setDisplay(display === '0' ? num : display + num);
-    }
+  useEffect(() => {
+    const fetchWaterIntake = async () => {
+      const intake = await backend.getWaterIntake();
+      setWaterIntake(intake);
+    };
+    fetchWaterIntake();
+  }, []);
+
+  const handleIncrement = async (index: number) => {
+    const newIntake = [...waterIntake];
+    newIntake[index] = Math.min(newIntake[index] + 8, GOAL_OUNCES);
+    const updatedIntake = await backend.updateWaterIntake(index, newIntake[index]);
+    setWaterIntake(updatedIntake);
   };
 
-  const handleOperationClick = (op: string) => {
-    setOperation(op);
-    setFirstNumber(parseFloat(display));
-    setWaitingForSecondNumber(true);
-  };
-
-  const handleClear = () => {
-    setDisplay('0');
-    setOperation('');
-    setFirstNumber(null);
-    setWaitingForSecondNumber(false);
-  };
-
-  const handleCalculate = async () => {
-    if (firstNumber !== null && operation) {
-      setCalculating(true);
-      try {
-        const result = await backend.calculate(operation, firstNumber, parseFloat(display));
-        setDisplay(result.toString());
-      } catch (error) {
-        setDisplay('Error');
-      } finally {
-        setCalculating(false);
-      }
-      setOperation('');
-      setFirstNumber(null);
-    }
+  const handleDecrement = async (index: number) => {
+    const newIntake = [...waterIntake];
+    newIntake[index] = Math.max(newIntake[index] - 8, 0);
+    const updatedIntake = await backend.updateWaterIntake(index, newIntake[index]);
+    setWaterIntake(updatedIntake);
   };
 
   return (
-    <CalculatorPaper elevation={3}>
-      <Grid container spacing={1}>
-        <Grid item xs={12}>
-          <DisplayTextField
-            fullWidth
-            variant="outlined"
-            value={display}
-            InputProps={{ readOnly: true }}
-          />
-        </Grid>
-        {['7', '8', '9', '4', '5', '6', '1', '2', '3', '0'].map((num) => (
-          <Grid item xs={3} key={num}>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => handleNumberClick(num)}
-            >
-              {num}
-            </Button>
+    <TrackerPaper elevation={3}>
+      <Typography variant="h4" gutterBottom color="primary">
+        Weekly Water Tracker
+      </Typography>
+      <Grid container spacing={2}>
+        {DAYS_OF_WEEK.map((day, index) => (
+          <Grid item xs={12} key={day}>
+            <Box display="flex" alignItems="center">
+              <Typography variant="subtitle1" style={{ width: 40 }}>{day}</Typography>
+              <Box flexGrow={1} mr={2}>
+                <LinearProgress
+                  variant="determinate"
+                  value={(waterIntake[index] / GOAL_OUNCES) * 100}
+                  style={{ height: 10, borderRadius: 5 }}
+                />
+              </Box>
+              <Button
+                onClick={() => handleDecrement(index)}
+                variant="contained"
+                color="secondary"
+                size="small"
+              >
+                -
+              </Button>
+              <Typography variant="body2" style={{ margin: '0 8px', width: 40, textAlign: 'center' }}>
+                {waterIntake[index]} oz
+              </Typography>
+              <Button
+                onClick={() => handleIncrement(index)}
+                variant="contained"
+                color="primary"
+                size="small"
+              >
+                +
+              </Button>
+            </Box>
           </Grid>
         ))}
-        {['+', '-', '*', '/'].map((op) => (
-          <Grid item xs={3} key={op}>
-            <Button
-              fullWidth
-              variant="contained"
-              color="secondary"
-              onClick={() => handleOperationClick(op)}
-            >
-              {op}
-            </Button>
-          </Grid>
-        ))}
-        <Grid item xs={6}>
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            onClick={handleCalculate}
-            disabled={calculating}
-          >
-            {calculating ? <CircularProgress size={24} /> : '='}
-          </Button>
-        </Grid>
-        <Grid item xs={6}>
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            onClick={handleClear}
-          >
-            C
-          </Button>
-        </Grid>
       </Grid>
-    </CalculatorPaper>
+      <Box mt={3} display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" alignItems="center">
+          <OpacityIcon color="primary" style={{ marginRight: 8 }} />
+          <Typography variant="h6" color="primary">
+            {waterIntake.reduce((a, b) => a + b, 0)} / {GOAL_OUNCES * 7} oz
+          </Typography>
+        </Box>
+        <Typography variant="subtitle2" color="textSecondary">
+          Weekly Goal
+        </Typography>
+      </Box>
+    </TrackerPaper>
   );
 };
 

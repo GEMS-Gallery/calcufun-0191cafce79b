@@ -1,3 +1,10 @@
 service : {
-  calculate: (text, float64, float64) -> (float64);
+  getWaterIntake: () -> (vec record {
+                               text;
+                               nat;
+                             }) query;
+  updateWaterIntake: (text, nat) -> (vec record {
+                                           text;
+                                           nat;
+                                         });
 }

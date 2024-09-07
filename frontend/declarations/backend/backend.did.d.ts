@@ -3,7 +3,8 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export interface _SERVICE {
-  'calculate' : ActorMethod<[string, number, number], number>,
+  'getWaterIntake' : ActorMethod<[], Array<[string, bigint]>>,
+  'updateWaterIntake' : ActorMethod<[string, bigint], Array<[string, bigint]>>,
 }
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const init: (args: { IDL: typeof IDL }) => IDL.Type[];
